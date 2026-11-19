@@ -1,0 +1,23 @@
+# Déploiement sur une VM OCI : la salle de jeux + Caddy (qui gère HTTPS automatiquement)
+# Lancer depuis ce dossier :  docker compose up -d --build
+services:
+  salle-de-jeux:
+    build:
+      context: ../..
+    restart: unless-stopped
+    # Pas de "ports" : seul Caddy est exposé sur Internet
+
+  caddy:
+    image: caddy:2
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+    depends_on:
+      - salle-de-jeux
+
+volumes:
+  caddy_data:

@@ -1,0 +1,6 @@
+{
+  // L'environnement Python du compagnon (créé par ./lancer.sh) : VS Code l'utilise pour ce dossier
+  // et l'active tout seul dans les nouveaux terminaux.
+  "python.defaultInterpreterPath": "${workspaceFolder}/compagnon-de-stage/backend/.venv/bin/python",
+  "python.terminal.activateEnvironment": true
+}

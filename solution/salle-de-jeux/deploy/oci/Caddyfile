@@ -1,0 +1,6 @@
+# Remplacer par le nom de domaine qui pointe vers l'IP publique de la VM.
+# Caddy obtient tout seul le certificat HTTPS (Let's Encrypt).
+jeux.example.com {
+	encode gzip
+	reverse_proxy salle-de-jeux:8000
+}

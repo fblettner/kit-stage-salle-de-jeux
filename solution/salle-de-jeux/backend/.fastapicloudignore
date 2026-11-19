@@ -1,0 +1,6 @@
+# Le dossier dist/ (le site compilé) est ignoré par Git, mais il DOIT être envoyé sur FastAPI Cloud.
+# Le "!" annule l'exclusion venant du .gitignore.
+!dist/
+
+# Inutile en production
+tests/

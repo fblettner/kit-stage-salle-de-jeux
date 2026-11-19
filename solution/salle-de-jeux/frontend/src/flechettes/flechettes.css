@@ -1,0 +1,38 @@
+/* Styles des fléchettes (toutes les classes commencent par flechettes-) */
+.flechettes-jeu { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 24px; align-items: start; }
+@media (max-width: 820px) { .flechettes-jeu { grid-template-columns: 1fr; } }
+.flechettes-panneau { display: flex; flex-direction: column; gap: 16px; }
+.flechettes-consigne { font-weight: 600; min-height: 1.5em; margin: 12px 0 8px; }
+.flechettes-message { font-size: 1.3rem; font-weight: 800; min-height: 1.8rem; margin: 8px 0; color: var(--accent); }
+
+/* Les scores */
+.flechettes-scores { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; max-width: 560px; }
+.flechettes-score {
+  display: flex; align-items: baseline; justify-content: space-between; padding: 10px 16px;
+  border-radius: 12px; background: var(--carte); border: 2px solid var(--bordure);
+}
+.flechettes-score b { font-size: 2rem; font-variant-numeric: tabular-nums; }
+.flechettes-score.actif { border-color: #f59e0b; box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.25); }
+.flechettes-score.ia.actif { border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.25); }
+
+/* La cible */
+.flechettes-cible {
+  display: block; width: 100%; max-width: 560px; aspect-ratio: 1;
+  border-radius: 50%; background: #3b2a1a; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+  touch-action: none; user-select: none;
+}
+.flechettes-cible.interactif { cursor: none; }
+.flechettes-numero { fill: #fff; font-size: 20px; font-weight: 700; text-anchor: middle; dominant-baseline: central; }
+.flechettes-viseur circle { fill: none; stroke: #fde047; stroke-width: 2.5; }
+.flechettes-viseur line { stroke: #fde047; stroke-width: 2; }
+.flechettes-visee-ia { fill: none; stroke: #93c5fd; stroke-width: 3; stroke-dasharray: 5 4; }
+.flechettes-conseil { fill: rgba(253, 224, 71, 0.25); stroke: #fde047; stroke-width: 3; animation: flechettes-pulse 1.2s ease-in-out infinite; }
+@keyframes flechettes-pulse { 50% { stroke-width: 6; } }
+
+/* La volée */
+.flechettes-volee { display: flex; gap: 8px; }
+.flechettes-volee span {
+  flex: 1; text-align: center; padding: 8px 4px; border-radius: 8px;
+  background: #f3ece1; font-weight: 700; font-variant-numeric: tabular-nums;
+}
+.flechettes-volee span.jouee { background: #fde68a; }

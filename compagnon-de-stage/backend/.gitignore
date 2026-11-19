@@ -1,0 +1,7 @@
+dist/
+donnees/
+__pycache__/
+.venv/
+.pytest_cache/
+*.egg-info/
+dist-jeux/

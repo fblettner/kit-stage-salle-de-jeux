@@ -1,0 +1,15 @@
+[project]
+name = "salle-de-jeux"
+version = "0.1.0"
+description = "La salle de jeux : échecs et tirs au but contre l'IA - projet de stage de 3e"
+requires-python = ">=3.10"
+dependencies = [
+    "fastapi[standard]>=0.144.0",
+    "chess>=1.11",
+]
+
+[project.optional-dependencies]
+dev = ["pytest", "httpx"]
+
+[tool.fastapi]
+entrypoint = "app.main:app"

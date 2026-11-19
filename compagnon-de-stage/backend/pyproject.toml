@@ -1,0 +1,21 @@
+[project]
+name = "compagnon-de-stage"
+version = "1.0.0"
+description = "Le compagnon du stage de 3e : le programme pour l'animateur, le parcours guidé pour les stagiaires"
+requires-python = ">=3.10"
+dependencies = [
+    "fastapi[standard]>=0.144.0",
+    "tzdata",
+    "chess>=1.11",      # pour le serveur des jeux d'exemple (les échecs), que le compagnon lance à côté de lui
+]
+
+[project.optional-dependencies]
+dev = ["pytest", "httpx"]
+
+[tool.fastapi]
+entrypoint = "app.main:app"
+
+# Le dossier contient aussi tests/, donnees/ et dist/ : on dit à l'installateur que le programme, c'est seulement app/
+# (sans cette ligne, « pip install -e . » refuse de choisir et s'arrête).
+[tool.setuptools]
+packages = ["app"]

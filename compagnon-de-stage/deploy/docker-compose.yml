@@ -1,0 +1,33 @@
+# Sur la VM OCI, dans le dossier du kit :
+#   cp compagnon-de-stage/deploy/.env.exemple compagnon-de-stage/deploy/.env   (puis le modifier)
+#   docker compose -f compagnon-de-stage/deploy/docker-compose.yml up -d --build
+services:
+  compagnon:
+    build:
+      context: ../..                         # la racine du kit
+      dockerfile: compagnon-de-stage/Dockerfile
+    restart: unless-stopped
+    env_file: .env                          # ANIMATEUR_MOT_DE_PASSE (jamais dans le code !)
+    volumes:
+      - donnees:/donnees                    # la base SQLite survit aux redémarrages et aux mises à jour
+    expose:
+      - "8000"
+
+  caddy:
+    image: caddy:2
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    env_file: .env                          # DOMAINE
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data                    # les certificats HTTPS
+      - caddy_config:/config
+    depends_on:
+      - compagnon
+
+volumes:
+  donnees:
+  caddy_data:
+  caddy_config:

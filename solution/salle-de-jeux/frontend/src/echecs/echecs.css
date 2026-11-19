@@ -1,0 +1,13 @@
+/* Styles du jeu d'échecs (tout commence par .echecs-) */
+.echecs-jeu { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 24px; align-items: start; }
+@media (max-width: 760px) { .echecs-jeu { grid-template-columns: 1fr; } }
+
+.echecs-plateau { width: 100%; max-width: 600px; }
+.echecs-statut { font-weight: 600; font-size: 1.1rem; margin: 0 0 10px; min-height: 1.5em; }
+.echecs-statut.fin { color: var(--accent); font-size: 1.3rem; }
+
+.echecs-panneau { display: flex; flex-direction: column; gap: 16px; }
+
+.echecs-historique { margin: 0; padding-left: 28px; max-height: 260px; overflow-y: auto; font-variant-numeric: tabular-nums; }
+.echecs-historique li { padding: 2px 0; }
+.echecs-historique span { display: inline-block; min-width: 64px; }

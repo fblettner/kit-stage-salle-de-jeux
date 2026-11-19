@@ -1,0 +1,13 @@
+# Pour construire l'image du compagnon depuis la racine du kit : on n'envoie que le nécessaire
+solution/**/.git
+solution/**/.venv
+solution/**/dist
+**/node_modules
+compagnon-de-stage/backend/dist
+compagnon-de-stage/backend/donnees
+compagnon-de-stage/backend/.venv
+**/__pycache__
+**/.pytest_cache
+*.zip
+**/*.egg-info
+compagnon-de-stage/backend/dist-jeux

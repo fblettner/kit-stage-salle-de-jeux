@@ -1,0 +1,74 @@
+/* L'habillage de la salle de jeux d'exemple quand elle est affichée DANS le compagnon.
+   Les jeux gardent leur code (la solution de référence n'est pas modifiée) : ce fichier est ajouté par-dessus
+   et remplace leurs couleurs par celles du compagnon, en sombre comme en clair. */
+
+:root {
+  --fond: transparent;
+  --texte: #eef1ff;
+  --discret: rgba(238, 241, 255, 0.6);
+  --accent: #4c9dff;
+  --accent-plein: #007aff;
+  --carte: rgba(255, 255, 255, 0.06);
+  --bordure: rgba(255, 255, 255, 0.12);
+  --champ: rgba(255, 255, 255, 0.05);
+  --menu: #1c2028;
+  --survol: rgba(0, 122, 255, 0.15);
+  --bord-survol: rgba(0, 122, 255, 0.4);
+  --ascenseur: rgba(255, 255, 255, 0.16);
+  font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'SF Pro Display', system-ui, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  font-size: 14.5px;
+  color-scheme: dark;
+  background: transparent;
+  -webkit-font-smoothing: antialiased;
+}
+:root.theme-clair {
+  --texte: #1a1a2e;
+  --discret: rgba(26, 26, 46, 0.6);
+  --accent: #0062cc;
+  --accent-plein: #0062cc;
+  --carte: rgba(255, 255, 255, 0.7);
+  --bordure: rgba(0, 0, 0, 0.1);
+  --champ: rgba(255, 255, 255, 0.8);
+  --menu: #ffffff;
+  --survol: rgba(0, 98, 204, 0.09);
+  --bord-survol: rgba(0, 98, 204, 0.3);
+  --ascenseur: rgba(0, 40, 120, 0.2);
+  color-scheme: light;
+}
+
+body { background: transparent; }
+* { scrollbar-width: thin; scrollbar-color: var(--ascenseur) transparent; }
+.page { max-width: 1100px; padding: 20px 20px 40px; }
+/* Le titre de la salle est déjà dans le bandeau du compagnon */
+.page > header { display: none; }
+h2 { font-weight: 600; }
+
+/* Boutons : pleins en bleu, « secondaires » en contour */
+button { border-radius: 10px; border: 1px solid transparent; background: var(--accent-plein); color: #fff; font-weight: 500; transition: opacity 0.15s, background 0.15s, border-color 0.15s; }
+button:hover:not(:disabled) { opacity: 0.88; }
+button.secondaire { background: transparent; border-color: var(--bordure); color: var(--texte); }
+button.secondaire:hover:not(:disabled) { background: var(--carte); opacity: 1; }
+
+/* Champs */
+select, input, textarea, .carte select, .coach-champ {
+  background: var(--champ); color: var(--texte); border: 1px solid var(--bordure); border-radius: 10px;
+}
+select option { background: var(--menu); color: var(--texte); }
+input[type='checkbox'], input[type='range'] { accent-color: var(--accent-plein); }
+
+/* Cartes et tuiles du menu : le verre dépoli du compagnon */
+.carte, .tuile { border-radius: 14px; backdrop-filter: blur(24px) saturate(180%); -webkit-backdrop-filter: blur(24px) saturate(180%); }
+.tuile { font-weight: 400; }
+.tuile:hover:not(:disabled) { opacity: 1; transform: translateY(-2px); border-color: var(--bord-survol); background: var(--survol); box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25); }
+.erreur { color: #ff453a; }
+:root.theme-clair .erreur { color: #d32f2f; }
+
+/* Quelques couleurs claires écrites en dur dans les jeux */
+.flechettes-volee span { background: var(--carte); border: 1px solid var(--bordure); }
+.flechettes-volee span.jouee { background: rgba(255, 214, 10, 0.22); border-color: rgba(255, 214, 10, 0.45); }
+.coach-tactique { background: var(--carte); color: var(--texte); font-weight: 400; }
+.coach-tactique.choisie { background: var(--survol); border-color: var(--accent); }
+.penalty-annonce.bon { color: #32d74b; }
+.penalty-annonce.mauvais { color: #ff453a; }
+:root.theme-clair .penalty-annonce.bon { color: #1a8a3a; }
+:root.theme-clair .penalty-annonce.mauvais { color: #d32f2f; }
