@@ -100,7 +100,7 @@ Pourquoi pas FastAPI Cloud ? L'appli enregistre les carnets dans un fichier (SQL
 que ce fichier survive à un redémarrage ou à un redéploiement. Sur ta VM, il vit dans un **volume Docker** : il survit
 aux redémarrages et aux mises à jour.
 
-L'architecture : `Internet → Caddy (HTTPS automatique) → le compagnon (FastAPI + le site React) → SQLite (volume)`.
+L'architecture : `Internet → nginx (HTTPS, certificat Let's Encrypt renouvelé par certbot) → le compagnon (FastAPI + le site React) → SQLite (volume)`.
 
 ### 1. Le nom de domaine
 
@@ -117,7 +117,7 @@ Vérifie : `dig +short stage.ton-domaine.fr`.
   sudo netfilter-persistent save
   ```
 
-Si la salle de jeux tourne déjà sur la même VM avec son propre Caddy, voir « Une seule VM pour les deux » plus bas.
+Si la salle de jeux des élèves tourne déjà sur la même VM, voir « Une seule VM pour les deux » plus bas.
 
 ### 3. Docker
 
@@ -126,31 +126,43 @@ curl -fsSL https://get.docker.com | sudo sh
 sudo usermod -aG docker $USER   # puis se déconnecter / reconnecter
 ```
 
-### 4. Le kit sur la VM, et les secrets
+### 4. Le kit sur la VM
 
 ```bash
-git clone <ton-dépôt-du-kit> kit-stage && cd kit-stage      # ou : scp -r du dossier du kit
-cp compagnon-de-stage/deploy/.env.exemple compagnon-de-stage/deploy/.env
-nano compagnon-de-stage/deploy/.env
+git clone <ton-dépôt-du-kit> kit-stage && cd kit-stage
 ```
-
-Dans `.env` : ton domaine, et un **mot de passe animateur long** (une phrase de 4-5 mots, par exemple).
-Ce fichier n'est jamais commité (il est dans `.gitignore`).
 
 ### 5. Lancer
 
 ```bash
-docker compose -f compagnon-de-stage/deploy/docker-compose.yml up -d --build
-docker compose -f compagnon-de-stage/deploy/docker-compose.yml logs -f      # Ctrl+C pour quitter
+./deployer.sh
 ```
 
-Au premier lancement, Caddy obtient le certificat HTTPS (quelques secondes). Ouvre `https://stage.ton-domaine.fr`.
+Le script pose trois questions (ton domaine, ton e-mail pour Let's Encrypt, et un **mot de passe animateur long** : une phrase
+de 4-5 mots), les range dans `compagnon-de-stage/deploy/.env` (ce fichier reste sur le serveur, il n'est jamais commité),
+construit l'image, demande le certificat HTTPS à Let's Encrypt, démarre, puis attend que le compagnon et les jeux répondent.
+Le certificat se renouvelle ensuite tout seul.
+
+| Commande | Ce qu'elle fait |
+|---|---|
+| `./deployer.sh` | premier déploiement, ou redémarrage |
+| `./deployer.sh --maj` | récupère la dernière version du kit (`git pull`), reconstruit, redémarre |
+| `./deployer.sh --certificat` | redemande le certificat HTTPS (perdu ou expiré), sans coupure |
+| `./deployer.sh --sauvegarde` | copie les carnets dans `sauvegarde-<date>.db` |
+| `./deployer.sh --journal` | affiche ce que disent les serveurs |
+| `./deployer.sh --arret` | arrête tout (les carnets sont conservés) |
+
+**Sans construire sur la VM.** GitHub construit aussi l'image à chaque `git push` sur `main` (onglet **Actions** du dépôt,
+fichier `.github/workflows/image-compagnon.yml`) : les tests passent, puis l'image part dans le registre `ghcr.io`, pour les VM
+Intel et ARM. Ajoute `--image` (`./deployer.sh --image`, `./deployer.sh --maj --image`) pour la télécharger au lieu de la construire :
+c'est plus rapide sur une petite VM. Attends la coche verte dans l'onglet Actions avant de mettre à jour.
 
 ### Mettre à jour (un prompt modifié, une nouvelle version)
 
+Pousse ta modification sur GitHub, puis sur la VM :
+
 ```bash
-git pull
-docker compose -f compagnon-de-stage/deploy/docker-compose.yml up -d --build
+./deployer.sh --maj
 ```
 
 Les carnets et les comptes sont conservés (ils sont dans le volume `donnees`).
@@ -158,24 +170,15 @@ Les carnets et les comptes sont conservés (ils sont dans le volume `donnees`).
 ### Sauvegarder les carnets (conseillé chaque soir)
 
 ```bash
-docker compose -f compagnon-de-stage/deploy/docker-compose.yml exec compagnon \
-  python -c "import sqlite3; s=sqlite3.connect('/donnees/compagnon.db'); s.backup(sqlite3.connect('/donnees/sauvegarde.db'))"
-docker compose -f compagnon-de-stage/deploy/docker-compose.yml cp compagnon:/donnees/sauvegarde.db ./sauvegarde-$(date +%F).db
+./deployer.sh --sauvegarde
 ```
 
 ### Une seule VM pour les deux (compagnon + salle de jeux)
 
-Un seul Caddy suffit : ajoute un bloc par domaine dans le même Caddyfile, et mets les deux services dans le même
-`docker-compose.yml` (ou sur le même réseau Docker) :
-
-```
-stage.ton-domaine.fr {
-	reverse_proxy compagnon:8000
-}
-jeux.ton-domaine.fr {
-	reverse_proxy salle-de-jeux:8000
-}
-```
+Les ports 80 et 443 ne peuvent appartenir qu'à un seul portier. Garde celui du compagnon (nginx) : mets le conteneur de la
+salle de jeux sur le même réseau Docker, sans portier à lui, puis ajoute dans `deploy/nginx/compagnon.conf` un deuxième bloc
+`server { listen 443 ssl; server_name jeux.ton-domaine.fr; … proxy_pass http://salle-de-jeux:8000; }` (copie celui du
+compagnon), avec son propre certificat : ajoute `-d jeux.ton-domaine.fr` à la commande certbot de `deployer.sh`.
 
 ### À la fin du stage
 
@@ -196,7 +199,7 @@ jeux.ton-domaine.fr {
   sessions ouvertes ne marchent plus). Les essais de connexion en rafale sont freinés.
 - **Le mot de passe animateur** vient de la variable d'environnement `ANIMATEUR_MOT_DE_PASSE` (jamais dans le code).
   Sans elle, la connexion animateur est refusée (sauf en mode dev local).
-- **HTTPS** par Caddy, en-têtes de sécurité, conteneur qui tourne sans les droits root.
+- **HTTPS** par nginx et Let's Encrypt, en-têtes de sécurité, conteneur qui tourne sans les droits root.
 - Un élève ne peut lire et modifier que **ses** données ; les routes `/api/animateur/…` exigent le jeton animateur.
 
 ---
@@ -220,7 +223,7 @@ compagnon-de-stage/
     src/stagiaire/          Ma journée, Mon projet, Carnet, Bugs, Lexique, Je suis bloqué, la fenêtre d'aide
     src/animateur/          Le programme, Stagiaires, Aides, Documents, Réglages
   Dockerfile                une image : le site construit + le serveur + les fichiers .md du kit + les 4 jeux d'exemple
-  deploy/                   docker-compose + Caddy pour la VM OCI
+  deploy/                   docker-compose + nginx + certbot pour le serveur (lancés par ./deployer.sh)
 ```
 
 Pour changer l'horaire ou l'ordre des activités : `backend/app/programme.py` (une ligne par activité).

@@ -2,8 +2,8 @@
 # À construire DEPUIS LA RACINE DU KIT (le dossier qui contient prompts/, fiches/, guides/) :
 #   docker build -f compagnon-de-stage/Dockerfile -t compagnon-de-stage .
 
-# 1) On construit le site React
-FROM node:22-slim AS site
+# 1) On construit le site React (sur la machine qui construit : le résultat, des fichiers statiques, est le même pour Intel et ARM)
+FROM --platform=$BUILDPLATFORM node:22-slim AS site
 WORKDIR /site
 COPY compagnon-de-stage/frontend/package*.json ./
 RUN npm ci
@@ -11,7 +11,7 @@ COPY compagnon-de-stage/frontend/ ./
 RUN npx vite build --outDir /site/dist
 
 # 1 bis) On construit le site des 4 jeux d'exemple, pour l'adresse /jeux/ du compagnon
-FROM node:22-slim AS jeux
+FROM --platform=$BUILDPLATFORM node:22-slim AS jeux
 WORKDIR /jeux
 COPY solution/salle-de-jeux/frontend/package*.json ./
 RUN npm ci

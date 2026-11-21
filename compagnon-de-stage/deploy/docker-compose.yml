@@ -1,33 +1,78 @@
-# Sur la VM OCI, dans le dossier du kit :
-#   cp compagnon-de-stage/deploy/.env.exemple compagnon-de-stage/deploy/.env   (puis le modifier)
-#   docker compose -f compagnon-de-stage/deploy/docker-compose.yml up -d --build
+# Sur le serveur, dans le dossier du kit :  ./deployer.sh   (il crée le fichier .env et lance ce qui suit)
+#
+#   Internet ──► nginx-proxy (80, 443 : HTTPS) ──► compagnon (8000) ──► SQLite (volume « donnees »)
+#                certbot : obtient et renouvelle le certificat Let's Encrypt
 services:
   compagnon:
+    # L'image construite par GitHub à chaque push sur main (.github/workflows/image-compagnon.yml).
+    # Un autre dépôt ? Mets IMAGE_COMPAGNON=ghcr.io/<compte>/<dépôt>:latest dans .env
+    image: ${IMAGE_COMPAGNON:-ghcr.io/fblettner/kit-stage-salle-de-jeux:latest}
     build:
       context: ../..                         # la racine du kit
       dockerfile: compagnon-de-stage/Dockerfile
     restart: unless-stopped
-    env_file: .env                          # ANIMATEUR_MOT_DE_PASSE (jamais dans le code !)
+    environment:
+      ANIMATEUR_MOT_DE_PASSE: ${ANIMATEUR_MOT_DE_PASSE:?à définir dans .env}   # jamais dans le code !
     volumes:
       - donnees:/donnees                    # la base SQLite survit aux redémarrages et aux mises à jour
     expose:
-      - "8000"
+      - "8000"                              # pas de « ports » : seul nginx est visible depuis Internet
 
-  caddy:
-    image: caddy:2
+  # Le portier : HTTPS, puis il transmet au compagnon
+  nginx-proxy:
+    image: nginx:alpine
     restart: unless-stopped
     ports:
       - "80:80"
       - "443:443"
-    env_file: .env                          # DOMAINE
+    environment:
+      DOMAINE: ${DOMAINE:?à définir dans .env}
     volumes:
-      - ./Caddyfile:/etc/caddy/Caddyfile:ro
-      - caddy_data:/data                    # les certificats HTTPS
-      - caddy_config:/config
+      - ./nginx/compagnon.conf:/modeles/compagnon.conf:ro
+      - certbot-etc:/etc/letsencrypt:ro
+      - certbot-webroot:/var/www/certbot:ro
+    # 1) on écrit le domaine dans la configuration  2) toutes les 6 h, nginx relit ses fichiers
+    #    (pour prendre le certificat renouvelé par certbot)  3) on démarre nginx
+    command:
+      - /bin/sh
+      - -c
+      - |
+        envsubst '$$DOMAINE' < /modeles/compagnon.conf > /etc/nginx/conf.d/default.conf
+        while :; do sleep 6h & wait $$!; nginx -s reload; done &
+        exec nginx -g 'daemon off;'
     depends_on:
       - compagnon
 
+  # Le portier provisoire, seulement pour obtenir le tout premier certificat (lancé par deployer.sh)
+  nginx-init:
+    image: nginx:alpine
+    profiles: [init]
+    ports:
+      - "80:80"
+    environment:
+      DOMAINE: ${DOMAINE:?à définir dans .env}
+    volumes:
+      - ./nginx/acme.conf:/modeles/acme.conf:ro
+      - certbot-webroot:/var/www/certbot:ro
+    command:
+      - /bin/sh
+      - -c
+      - |
+        envsubst '$$DOMAINE' < /modeles/acme.conf > /etc/nginx/conf.d/default.conf
+        exec nginx -g 'daemon off;'
+
+  # Let's Encrypt : deux fois par jour, il renouvelle le certificat s'il arrive à échéance
+  certbot:
+    image: certbot/certbot
+    restart: unless-stopped
+    volumes:
+      - certbot-etc:/etc/letsencrypt
+      - certbot-var:/var/lib/letsencrypt
+      - certbot-webroot:/var/www/certbot
+    entrypoint: "/bin/sh -c 'trap exit TERM; while :; do sleep 12h & wait $${!}; certbot renew --webroot -w /var/www/certbot --quiet; done'"
+
 volumes:
   donnees:
-  caddy_data:
-  caddy_config:
+  certbot-etc:
+  certbot-var:
+  certbot-webroot:

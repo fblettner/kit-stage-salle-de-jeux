@@ -45,6 +45,7 @@ fiches/
 solution/salle-de-jeux/             ← solution de référence testée, avec LES 4 JEUX
 compagnon-de-stage/                 ← l'appli web du stage : ton tableau de bord + un parcours guidé par élève
 lancer.sh                           ← ./lancer.sh : démarre le compagnon, avec les 4 jeux d'exemple dans son menu (« La salle de jeux »)
+deployer.sh                         ← ./deployer.sh : met le compagnon en ligne sur un serveur (Docker), puis --maj pour le mettre à jour
 ```
 
 > 🧭 **Le compagnon de stage** (`compagnon-de-stage/README.md`) met tout ce kit en ligne : ton écran animateur
