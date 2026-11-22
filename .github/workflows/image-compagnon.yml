@@ -63,6 +63,34 @@ jobs:
             type=raw,value=latest,enable={{is_default_branch}}
             type=sha
 
+      # Avant de publier : on démarre vraiment l'image et on vérifie qu'elle répond (le compagnon, les jeux, leur serveur).
+      # Les tests ci-dessus ne voient pas les erreurs qui n'arrivent QUE dans l'image (un chemin différent, un fichier oublié).
+      - name: Construire l'image pour l'essayer
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: compagnon-de-stage/Dockerfile
+          load: true
+          tags: compagnon:essai
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Démarrer l'image et vérifier qu'elle répond
+        run: |
+          docker run -d --name essai -p 8000:8000 -e ANIMATEUR_MOT_DE_PASSE="un mot de passe pour l essai" compagnon:essai
+          for essai in $(seq 1 30); do
+            if curl -sf -o /dev/null http://127.0.0.1:8000/api/sante; then break; fi
+            sleep 2
+          done
+          docker logs essai
+          curl -sf -o /dev/null http://127.0.0.1:8000/api/sante     # le serveur des jeux, à travers le compagnon
+          curl -sf -o /dev/null http://127.0.0.1:8000/               # le site du compagnon
+          curl -sf -o /dev/null http://127.0.0.1:8000/jeux/          # le site des jeux
+          # et, connecté comme animateur : le programme (lu dans les fichiers .md du kit) annonce bien la salle de jeux
+          jeton=$(curl -sf -H 'Content-Type: application/json' -d '{"mot_de_passe":"un mot de passe pour l essai"}' \
+            http://127.0.0.1:8000/api/connexion/animateur | python3 -c "import json,sys; print(json.load(sys.stdin)['jeton'])")
+          curl -sf -H "Authorization: Bearer $jeton" http://127.0.0.1:8000/api/programme | grep -q '"salle": *true'
+
       - name: Construire (et publier si on est sur main)
         uses: docker/build-push-action@v6
         with:

@@ -3,8 +3,11 @@ import os
 from pathlib import Path
 
 # Le dossier du kit, qui contient les fichiers .md (prompts/, fiches/, guides/…).
-# Par défaut : le dossier parent de compagnon-de-stage/.
-CONTENU_DIR = Path(os.environ.get("CONTENU_DIR", Path(__file__).resolve().parents[3]))
+# Par défaut : le dossier parent de compagnon-de-stage/, trois niveaux au-dessus de ce fichier.
+# On ne calcule ce chemin par défaut QUE si la variable n'est pas définie : dans l'image Docker,
+# ce fichier est dans /app/app, il n'y a pas trois niveaux au-dessus, et le calcul plantait au démarrage.
+ICI = Path(__file__).resolve()
+CONTENU_DIR = Path(os.environ["CONTENU_DIR"]) if os.environ.get("CONTENU_DIR") else ICI.parents[3]
 
 # Le fichier de la base de données SQLite
 DB_PATH = Path(os.environ.get("DB_PATH", Path(__file__).resolve().parents[1] / "donnees" / "compagnon.db"))
